@@ -1,0 +1,81 @@
+# Maintainer: Jan-Henrik Bruhn <aur@jhbruhn.de>
+# Contributor: Max Stabel <max dot stabel03 at gmail dot com>
+
+pkgname=ltspice
+pkgver=24.0.8.20240131.9
+pkgrel=1
+pkgdesc="SPICE simulator, schematic capture and waveform viewer. Installation based on Field Update Utility."
+arch=('x86_64')
+url="http://www.linear.com/designtools/software/"
+license=('custom')
+depends=('wine')
+makedepends=('curl' 'icoutils' 'imagemagick' 'gendesk' 'msitools')
+
+source=("${pkgname}.sh"
+        "${pkgname}-help.sh"
+        "https://ltspice.analog.com/software/LTspice64.msi")
+sha256sums=('69080c30dee9c0141bbe04684c31f1896565778cbe3705cd4eb0996ed31d6c2e'
+            '25fdb185aea9752b1739d5787f9c180ddd5be728f25ebb6877075be272e79195'
+            '5356456fd261809ee0f7fcda60e0ad396957ab3fff9100a435194d73143d77e8')
+
+OPTIONS=(!strip)
+
+prepare() {
+    cd "${srcdir}"
+
+    msiextract LTspice64.msi
+    mv -f "APPDIR:."/* .
+    mv -f "LocalAppDataFolder/LTspice"/* .
+}
+
+build() {
+    cd "${srcdir}"
+
+    wrestool -x -t 14 LTspice.exe >${pkgname}.ico
+    convert ${pkgname}.ico ${pkgname}.png
+    rm ${pkgname}.ico
+
+    gendesk --pkgname "${pkgname}" --pkgdesc "${pkgdesc}" -n --name="LTSpice" --exec="/usr/bin/ltspice" -f
+}
+
+package()
+{
+    cd "${srcdir}"
+
+    # Install License
+    install -Dm644 License.txt "${pkgdir}/usr/share/licenses/${pkgname}/LICENSE"
+
+    # Install Desktop file
+    install -Dm644 "${pkgname}.png" "${pkgdir}/usr/share/pixmaps/${pkgname}.png"
+    install -Dm644 "${pkgname}.desktop" "${pkgdir}/usr/share/applications/${pkgname}.desktop"
+
+    # Install docs to /usr/share/doc/
+    # install -Dm644 LTspiceHelp.chm "${pkgdir}/usr/share/doc/${pkgname}/ltspice.chm"
+    # TODO fix help
+
+    # Install binary files to /opt
+    install -m755 -d "${pkgdir}/opt/${pkgname}"
+    install -m755 *.exe "${pkgdir}/opt/${pkgname}"
+    install -m644 *.zip "${pkgdir}/opt/${pkgname}"
+    install -m644 LTspice.json "${pkgdir}/opt/${pkgname}"
+    install -m644 ChangeLog.txt "${pkgdir}/opt/${pkgname}"
+
+    # Install /usr/bin startscript
+    install -Dm755 "${srcdir}/${pkgname}.sh" "${pkgdir}/usr/bin/${pkgname}"
+    # install -Dm755 "${srcdir}/${pkgname}-help.sh" "${pkgdir}/usr/bin/${pkgname}-help"
+    # TODO fix help
+}
+
+pkgver() {
+    cd "${srcdir}"
+
+    # program
+    ver=$(grep LTspice64.msi LTspice.json -A1 | tail -n1 | grep -oP '24\.\d+\.\d+')
+
+    # data
+    date=$(head -n1 ChangeLog.txt | awk '{print $1}')
+    count=$(grep -c "$date" ChangeLog.txt)
+    date_format=$(echo $date | awk -F/ '{print "20"$3$1$2}')
+
+    echo "$ver.$date_format.$count"
+}

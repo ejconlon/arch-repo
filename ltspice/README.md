@@ -1,14 +1,10 @@
-# Arch package for LTSpice
+# LTSpice
 
-## Installation
+Forked from the [AUR](https://aur.archlinux.org/packages/ltspice).
 
-Install with your favorite package helper. (`makepkg -is` or `paru -Ui`)
+Use the `ltspice` command to start the program. (For now `ltspice-help` is broken.)
 
-## Running
-
-Just use the `ltspice` command. (For now `ltspice-help` is broken.)
-
-Please note that running the app requires a `wine` prefix at `~/.local/share/wineprefixes/ltspice`:
+Please note that running the app first requires a `wine` prefix at `~/.local/share/wineprefixes/ltspice`:
 
     sudo pamac install wine winetricks
     winetricks arch=64 prefix=ltspice
